@@ -1,10 +1,13 @@
-"""Necessary library imports"""
-import numpy
+import numpy as np
+from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score
 from keras.datasets import cifar10
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import Flatten
+from keras.constraints import maxnorm
+from keras.optimizers import SGD
 from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import MaxPooling2D
 from keras.utils import np_utils
@@ -12,7 +15,6 @@ from keras import backend as K
 K.set_image_dim_ordering('th')
 from keras.models import load_model
 
-"""Function to load CIFAR dataset, normalize pixel values between 0.0 and 1.0, one hot encode target variables"""
 def load_and_normalize():
     (Xtrain, Ytrain), (Xtest, Ytest) = cifar10.load_data()
     
@@ -22,13 +24,11 @@ def load_and_normalize():
     Xtrain=Xtrain/255.0
     Xtest=Xtest/255.0
     
+    YT=Ytest
     Ytrain = np_utils.to_categorical(Ytrain)
     Ytest = np_utils.to_categorical(Ytest)
     num_classes = Ytest.shape[1]
-    return Xtrain,Ytrain,Xtest,Ytest,num_classes
-
-"""Function to build a 5 layer CNN with 32,64,128,256 and 512 filters. Uses ReLU as activation function for all layers
-except output layer(uses softmax function). Training the model for 50 epochs and 100 as batch size"""
+    return Xtrain,Ytrain,Xtest,Ytest,num_classes,YT
 
 def BuildModel():
     model= Sequential()
@@ -59,18 +59,29 @@ def BuildModel():
    
     model.add(Dense(num_class,activation="softmax"))
     model.compile(loss='categorical_crossentropy', optimizer="adam", metrics=['accuracy'])
-    model.fit(xtrain,ytrain,epochs=50, batch_size=100)
+    model.fit(xtrain,ytrain,epochs=20, batch_size=100)
     model.save('image_classification.h5')
 
-"""Function to load saved model and test it using test dataset """
 def testModel(model_name):
     model=load_model(model_name)
-    scores = model.evaluate(xtest, ytest, verbose=0)
-    print("Accuracy: %.2f%%" % (scores[1]*100))
-    
-""" main function """
+    pred= model.predict(xtest)
+    pred=np.argmax(np.round(pred),axis=1)
+    return pred
+
+def printReports(predictions,original):
+    print (classification_report(original,predictions))
+    print ("Model Accuracy:",accuracy_score(original,predictions))
+
+
+#def image_augmentation():
+    #1. convert rgb to greyscale images
+    #2. perform contour detection/ OTSU thresholding
+
 if __name__ == "__main__":
-    xtrain,ytrain,xtest,ytest,num_class=load_and_normalize()
+    xtrain,ytrain,xtest,ytest,num_class,y=load_and_normalize()
     BuildModel()
-    testModel('image_classification.h5')
+    predictions=testModel('image_classification.h5')
+    printReports(predictions,y)
+
+
 
