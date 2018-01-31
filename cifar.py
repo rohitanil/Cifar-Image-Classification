@@ -6,8 +6,7 @@ from keras.models import Sequential
 from keras.layers import Dense
 from keras.layers import Dropout
 from keras.layers import Flatten
-from keras.constraints import maxnorm
-from keras.optimizers import SGD
+from keras.layers import ZeroPadding2D
 from keras.layers.convolutional import Conv2D
 from keras.layers.convolutional import MaxPooling2D
 from keras.utils import np_utils
@@ -33,7 +32,7 @@ def load_and_normalize():
 def BuildModel():
     model= Sequential()
     model.add(Conv2D(32, (3, 3),input_shape=(3,32,32),padding="same", activation="relu"))
-    
+    model.add(ZeroPadding2D(pool_size=(1,1)))
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.1))
     
